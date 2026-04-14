@@ -1271,6 +1271,51 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
   border-radius: 12px; 
   border: 1px solid var(--border); 
 }
+.action-preview-box { background: rgba(139, 111, 200, 0.05); border: 1px dashed var(--accent); border-radius: 8px; padding: 16px; display: none; margin-top: 15px; }
+.party-layout { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
+.party-panel { background: var(--surface2); padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
+.entity-list-mini { display: flex; flex-direction: column; gap: 8px; }
+.entity-item-mini { 
+  background: var(--bg); 
+  padding: 8px 12px; 
+  border-radius: 6px; 
+  font-size: 12px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  border-left: 3px solid var(--accent);
+}
+.bestiary-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); }
+.bestiary-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--accent); margin-bottom: 6px; letter-spacing: 0.1em; }
+.monster-tag { background: rgba(200,110,110,0.1); color: #c86e6e; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; display: inline-block; }
+.calendar-widget { margin-left: auto; background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--accent); }
+.calendar-widget:hover { border-color: var(--accent); }
+.journal-container { display: flex; flex-direction: column; gap: 32px; padding: 20px 0; }
+.journal-entry { 
+  background: var(--surface); 
+  border: 1px solid var(--border); 
+  border-radius: 12px; 
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+.journal-header { 
+  background: rgba(139,111,200,0.1); 
+  padding: 16px 24px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.journal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--border); }
+.journal-section { background: var(--surface); padding: 24px; position: relative; }
+.journal-section-title { font-family: 'Cinzel', serif; font-size: 14px; color: var(--accent); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.journal-text { font-size: 14px; line-height: 1.6; color: var(--text-muted); white-space: pre-wrap; font-family: 'Crimson Pro', serif; height: 300px; overflow-y: auto; padding-right: 10px; }
+.copy-btn-journal { 
+  position: absolute; top: 20px; right: 20px; 
+  background: rgba(255,255,255,0.05); color: var(--text-dim); border: 1px solid var(--border); 
+  padding: 4px 10px; border-radius: 4px; font-size: 10px; cursor: pointer; transition: 0.2s;
+}
+.copy-btn-journal:hover { background: var(--accent); color: white; border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -1280,6 +1325,9 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
   <div class="news-label">🔔 NOTICIAS</div>
   <div class="news-track" id="newsTrack">
     <div class="news-content" id="newsContent">El mundo despierta... El Valle de Dessarin aguarda vuestras decisiones.</div>
+  </div>
+  <div class="calendar-widget" id="calendarWidget" onclick="openModal('calendar')">
+    📅 <span id="calDate">1 Hammer, 1491 DR</span>
   </div>
 </div>
 
@@ -1307,7 +1355,8 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
   <button class="tab-btn" onclick="switchTab('facciones')">⚑ Facciones</button>
   <button class="tab-btn" onclick="switchTab('eventos')">⚡ Eventos</button>
   <button class="tab-btn" onclick="switchTab('artefactos')">💎 Artefactos</button>
-  <button class="tab-btn" onclick="switchTab('timeline')">📜 Línea de Tiempo</button>
+  <button class="tab-btn" onclick="switchTab('timeline')">📜 Cronología</button>
+  <button class="tab-btn" onclick="switchTab('cronicas')">📖 Crónicas</button>
   <button class="tab-btn" onclick="switchTab('rumores')">🗣 Rumores & IA</button>
   <button class="tab-btn" onclick="switchTab('mapa')">🌐 Mapa</button>
   <button class="tab-btn" onclick="switchTab('misiones')">🎯 Misiones</button>
@@ -1391,6 +1440,7 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
 <div class="tab-content" id="tab-facciones">
   <div class="toolbar">
     <button class="btn primary" onclick="openModal('addFaction')">＋ Nueva Facción</button>
+    <button class="btn danger" onclick="openModal('conflict')">⚔ Resolver Conflicto</button>
     <button class="btn purple" onclick="generateFactionNarrative()">🗣 IA: Estado de Facciones</button>
   </div>
   <div class="regions-grid" id="factionsGrid"></div>
@@ -1414,6 +1464,15 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
     <button class="btn purple" onclick="openModal('aiGeneration', 'Artefacto')">🪄 IA: Crear Artefacto</button>
   </div>
   <div class="items-grid" id="itemsGrid"></div>
+</div>
+
+<!-- ===== CRÓNICAS / DIARIO ===== -->
+<div class="tab-content" id="tab-cronicas">
+  <div class="toolbar">
+    <button class="btn primary" onclick="generateCampaignJournal()">📖 Generar Crónica de Sesión</button>
+    <div style="color:var(--text-dim); font-size:12px; margin-left:12px">Usa las decisiones y la cronología para tejer la historia.</div>
+  </div>
+  <div id="journalContainer" class="journal-container"></div>
 </div>
 
 <!-- ===== TIMELINE ===== -->
@@ -1499,6 +1558,48 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
     <div class="party-journal">
       <div class="section-header">📓 Notas del DM sobre el Grupo</div>
       <textarea class="form-textarea" style="height: calc(100% - 40px)" id="partyNotes" onchange="updatePartyStat('notes', this.value)"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EL GRUPO ===== -->
+<div class="tab-content" id="tab-grupo">
+  <div class="party-status-bar" id="partyStatusBar"></div>
+
+  <div class="party-layout">
+    <div class="party-main-col">
+      <div class="party-console">
+        <div class="section-header">🛡️ Acción del Grupo</div>
+        <div class="form-group">
+          <label class="form-label">¿Qué han hecho los jugadores?</label>
+          <textarea class="form-textarea" id="partyActionInput" placeholder="Ej: Derrotaron al Rey de los Osos en el bosque..."></textarea>
+        </div>
+        <div class="action-btn-row">
+          <button class="btn purple" onclick="analyzePartyAction()">🪄 IA: Analizar Impacto</button>
+          <button class="btn primary" onclick="submitPartyActionManual()">📜 Registrar Manual</button>
+        </div>
+        <div id="partyActionProgress" style="display:none; color:var(--accent); font-style:italic; margin-top:10px">Calculando las ondas de choque en el mundo...</div>
+        <div id="partyActionPreview" class="action-preview-box"></div>
+      </div>
+
+      <div class="party-console" style="margin-top:20px">
+        <div class="section-header">📓 Notas del DM sobre el Grupo</div>
+        <textarea class="form-textarea" style="height: 150px" id="partyNotes" onchange="updatePartyStat('notes', this.value)"></textarea>
+      </div>
+    </div>
+
+    <div class="party-side-col">
+      <div class="party-panel">
+        <div class="section-header">🏆 Hazañas y Títulos</div>
+        <div id="partyAchievements" class="entity-list-mini"></div>
+        <button class="btn-sm" style="width:100%; margin-top:8px" onclick="addAchievement()">＋ Nuevo Título</button>
+      </div>
+
+      <div class="party-panel" style="margin-top:20px">
+        <div class="section-header">🎭 Decisiones Clave</div>
+        <div id="partyDecisions" class="entity-list-mini"></div>
+        <button class="btn-sm" style="width:100%; margin-top:8px" onclick="addDecision()">＋ Nueva Decisión</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1665,6 +1766,21 @@ const DEFAULT_DATA = {
   nextId: 100
 };
 
+const HARPTOS_MONTHS = [
+  { name: 'Hammer', label: 'Enero', desc: 'Deepwinter' },
+  { name: 'Alturiak', label: 'Febrero', desc: 'The Claw of Winter' },
+  { name: 'Ches', label: 'Marzo', desc: 'The Claw of Sunsets' },
+  { name: 'Tarsakh', label: 'Abril', desc: 'The Garden' },
+  { name: 'Mirtul', label: 'Mayo', desc: 'The Melting' },
+  { name: 'Kythorn', label: 'Junio', desc: 'The Time of Flowers' },
+  { name: 'Flamerule', label: 'Julio', desc: 'Summertide' },
+  { name: 'Eleasias', label: 'Agosto', desc: 'Highsun' },
+  { name: 'Eleint', label: 'Septiembre', desc: 'The Fading' },
+  { name: 'Marpenoth', label: 'Octubre', desc: 'Leafall' },
+  { name: 'Uktar', label: 'Noviembre', desc: 'The Rotting' },
+  { name: 'Nightal', label: 'Diciembre', desc: 'The Drawing Down' }
+];
+
 let WD = {};
 
 function loadData() {
@@ -1677,8 +1793,17 @@ function loadData() {
       if (!WD.factions) WD.factions = DEFAULT_DATA.factions;
       if (!WD.timeline) WD.timeline = [];
       if (!WD.missions) WD.missions = DEFAULT_DATA.missions.map(m => ({...m}));
-      if (!WD.party) WD.party = { location: 'Red Larch', names: 'Los Héroes', notes: '', stats: { level: 1, gold: 0 } };
+      if (!WD.party) WD.party = { location: 'Red Larch', names: 'Los Héroes', notes: '', stats: { level: 1, gold: 0 }, achievements: [], decisions: [] };
+      if (!WD.calendar) WD.calendar = { day: 1, month: 0, year: 1491 };
+      if (!WD.journals) WD.journals = [];
       if (!WD.statsHistory) WD.statsHistory = [];
+
+      for (const r of Object.values(WD.regions || {})) {
+        if (!r.bestiary) r.bestiary = [];
+      }
+      for (const f of (WD.factions || [])) {
+        if (!f.territories) f.territories = [];
+      }
       // Migrate new region fields
       for (const r of Object.values(WD.regions || {})) {
         if (!r.notes) r.notes = '';
@@ -1799,6 +1924,7 @@ function renderTab(name) {
   if (name === 'mapa') renderMap();
   if (name === 'misiones') renderMissions();
   if (name === 'grupo') renderParty();
+  if (name === 'cronicas') renderJournals();
   if (name === 'herramientas') {} // static HTML
 }
 
@@ -1971,6 +2097,14 @@ function renderRegions() {
         ${allEvents.length > 0 ? `<div class="events-list"><div style="font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-bottom:4px;letter-spacing:0.05em">EVENTOS (${allEvents.length})</div>${recentEvents}</div>` : ''}
         ${histHtml}
         ${relationsHtml}
+        <div class="bestiary-section">
+          <div class="bestiary-title">🐲 BESTIARIO LOCAL</div>
+          <div class="bestiary-list" id="bestiary-${name.replace(/\s+/g,'-')}">
+            ${(r.bestiary||[]).map(m => `<span class="monster-tag">${m}</span>`).join('')}
+            ${(r.bestiary||[]).length === 0 ? '<span style="color:var(--text-dim);font-size:10px">Sin amenazas registradas</span>' : ''}
+          </div>
+          <button class="btn-sm" style="margin-top:6px; font-size:9px" onclick="generateRegionalBestiary('${name}')">🪄 Actualizar</button>
+        </div>
         ${notesHtml}
         <div class="region-actions" style="margin-top:10px">
           <button class="btn-sm" onclick="addEventToRegion('${name}')">+ Evento</button>
@@ -2704,22 +2838,34 @@ function openModal(type, param) {
     actions.innerHTML = `<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="submitEditMission(${m.id})">Guardar</button>`;
   }
 
-  else if (type === 'encounter') {
-    const preselect = param || '';
-    title.textContent = '⚔ Generador de Encuentros';
-    const regionOpts = Object.keys(WD.regions).map(r => `<option value="${r}" ${r===preselect?'selected':''}>${r}</option>`).join('');
+  else if (type === 'calendar') {
+    const cal = WD.calendar;
+    title.textContent = '🗓 Calendario de Harptos';
+    const monthOpts = HARPTOS_MONTHS.map((m,i) => `<option value="${i}" ${cal.month===i?'selected':''}>${m.name} (${m.label})</option>`).join('');
     body.innerHTML = `
-      <div class="form-group"><label class="form-label">Región</label>
-        <select class="form-select" id="encRegionSelect">${regionOpts}</select></div>
-      <div class="form-group"><label class="form-label">Tipo de terreno</label>
-        <select class="form-select" id="encTypeSelect">
-          <option value="road">🛞 Ruta / Exterior / Camino</option>
-          <option value="dungeon">🕳 Mazmorra / Interior / Cueva</option>
-        </select></div>
-      <button class="btn primary" onclick="generateEncounterResult()" style="width:100%;margin-top:4px">🎲 Generar Encuentro</button>
-      <div id="encounterResult" class="encounter-output" style="min-height:60px;color:var(--text-dim);font-style:italic">Selecciona una región y genera el encuentro...</div>
+      <div style="display:grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px">
+        <div class="form-group"><label class="form-label">Día</label><input class="form-input" type="number" id="calDay" value="${cal.day}" min="1" max="30"></div>
+        <div class="form-group"><label class="form-label">Mes</label><select class="form-select" id="calMonth">${monthOpts}</select></div>
+        <div class="form-group"><label class="form-label">Año (DR)</label><input class="form-input" type="number" id="calYear" value="${cal.year}"></div>
+      </div>
+      <button class="btn primary" style="width:100%; margin-top:10px" onclick="submitCalendar()">Establecer Fecha</button>
+      <button class="btn" style="width:100%; margin-top:10px" onclick="advanceDay()">＋ Avanzar 1 Día</button>
     `;
     actions.innerHTML = `<button class="btn" onclick="closeModal()">Cerrar</button>`;
+  }
+
+  else if (type === 'conflict') {
+    title.textContent = '⚔ Simulador de Conflicto';
+    const facOpts = (WD.factions||[]).map(f => `<option value="${f.id}">${f.name} (Pwr:${f.power})</option>`).join('');
+    body.innerHTML = `
+      <div class="form-group"><label class="form-label">Facción A (Agresor)</label><select class="form-select" id="confFacA">${facOpts}</select></div>
+      <div class="form-group"><label class="form-label">Facción B (Defensor)</label><select class="form-select" id="confFacB">${facOpts}</select></div>
+      <div id="conflictResult" class="encounter-output" style="margin-top:10px; display:none"></div>
+    `;
+    actions.innerHTML = `
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn danger" onclick="resolveConflict()">¡Resolver Batalla!</button>
+    `;
   }
 }
 
@@ -3004,16 +3150,19 @@ function worldSummaryForAI() {
   const factions = (WD.factions||[]).map(f => `${f.name} (poder:${f.power})`).join(', ');
   const hostileNPCs = (WD.npcs||[]).filter(n => n.relation === 'hostil').map(n => n.name).join(', ');
 
-  return `
-Campaña: Ecos del Apocalipsis: El Pacto Roto (Preludio a Princes of the Apocalypse, D&D 5e, Forgotten Realms, en español)
+  const prompt = `
+Campaña: Ecos del Apocalipsis: El Pacto Roto (D&D 5e)
 DM: Brayan
+FECHA: ${WD.calendar.day} de ${HARPTOS_MONTHS[WD.calendar.month].name}, ${WD.calendar.year} DR
+
+GRUPO: ${WD.party.location} | Nivel ${WD.party.stats.level}
+HAZAÑAS: ${WD.party.achievements.join(', ') || 'Ninguna'}
+DECISIONES CLAVE: ${WD.party.decisions.join(', ') || 'Ninguna'}
 
 REGIONES EN CRISIS: ${crisisRegions.join(' | ') || 'Ninguna'}
-EVENTOS RECIENTES: ${activeEvents || 'Ninguno'}
-FACCIONES ACTIVAS: ${factions}
-NPCs HOSTILES: ${hostileNPCs || 'Ninguno'}
-SESIÓN ACTUAL: ${WD.currentSession || 'Desconocida'}
+FACCIONES: ${factions}
   `.trim();
+  return prompt;
 }
 
 async function generateRumors() {
@@ -4059,6 +4208,219 @@ generateWorldAnalysis = async function() {
   renderTensionChart();
 };
 
+// ============================================================
+// CALENDAR & CONFLICT & BESTIARY LOGIC
+// ============================================================
+function updateCalendarDisplay() {
+  const el = document.getElementById('calDate');
+  if (!el || !WD.calendar) return;
+  const c = WD.calendar;
+  el.textContent = `${c.day} ${HARPTOS_MONTHS[c.month].name}, ${c.year} DR`;
+}
+
+function submitCalendar() {
+  WD.calendar.day = Number(document.getElementById('calDay').value);
+  WD.calendar.month = Number(document.getElementById('calMonth').value);
+  WD.calendar.year = Number(document.getElementById('calYear').value);
+  saveData(); updateCalendarDisplay(); notify('🗓 Fecha actualizada');
+}
+
+function advanceDay() {
+  WD.calendar.day++;
+  if (WD.calendar.day > 30) { WD.calendar.day = 1; WD.calendar.month++; }
+  if (WD.calendar.month > 11) { WD.calendar.month = 0; WD.calendar.year++; }
+  saveData(); updateCalendarDisplay();
+  const day = document.getElementById('calDay'); if(day) day.value = WD.calendar.day;
+  const month = document.getElementById('calMonth'); if(month) month.value = WD.calendar.month;
+  notify('🌅 Ha amanecido un nuevo día');
+}
+
+async function resolveConflict() {
+  const idA = Number(document.getElementById('confFacA').value);
+  const idB = Number(document.getElementById('confFacB').value);
+  if (idA === idB) return alert('Deben ser facciones distintas');
+  
+  const fA = WD.factions.find(f => f.id === idA);
+  const fB = WD.factions.find(f => f.id === idB);
+  const res = document.getElementById('conflictResult');
+  res.style.display = 'block'; res.innerHTML = '⚔ Los ejércitos marchan...';
+
+  const rollA = Math.floor(Math.random()*20)+1;
+  const rollB = Math.floor(Math.random()*20)+1;
+  const scoreA = fA.power + rollA;
+  const scoreB = fB.power + rollB;
+  const winner = scoreA > scoreB ? fA : fB;
+  const loser = scoreA > scoreB ? fB : fA;
+
+  const prompt = `Simula una batalla corta de D&D para el DM.
+ATACANTE: ${fA.name} (Pwr:${fA.power}) | DEFENSOR: ${fB.name} (Pwr:${fB.power})
+GANADOR: ${winner.name} (Dados: ${scoreA} vs ${scoreB})
+En 3 frases épicas, describe el resultado y una consecuencia territorial. En español.`;
+
+  const desc = await callOpenRouter(prompt);
+  res.innerHTML = `<strong>Resultado: ¡Victoria para ${winner.name}!</strong><br><br>${desc}`;
+  
+  winner.power += 5; loser.power -= 5;
+  WD.events.push({ id:Date.now(), name:`GUERRA: ${winner.name} vence a ${loser.name}`, description:desc, session:WD.currentSession });
+  saveData(); renderFactions(); renderEvents(); updateNewsTicker();
+}
+
+async function generateRegionalBestiary(name) {
+  const r = WD.regions[name];
+  if (!r) return;
+  notify(`🐉 Consultando el ecosistema de ${name}...`);
+  const prompt = `Eres un experto en el bestiario de D&D 5e. Según el estado de esta región:
+${name} | Caos:${r.chaos}, Magia:${r.magicInstability}, Elemento:${Object.entries(r.elements).sort((a,b)=>b[1]-a[1])[0][0]}
+Genera una lista de 4 monstruos temáticos que habiten aquí ahora. Solo los nombres, separados por coma. En español.`;
+
+  const raw = await callOpenRouter(prompt);
+  if (raw) {
+    r.bestiary = raw.split(',').map(m => m.trim());
+    saveData(); renderRegions();
+  }
+}
+
+// ============================================================
+// PARTY ACHIEVEMENTS & DECISIONS
+// ============================================================
+const oldRenderParty = renderParty;
+renderParty = function() {
+  oldRenderParty();
+  const ach = document.getElementById('partyAchievements');
+  const dec = document.getElementById('partyDecisions');
+  if (ach) ach.innerHTML = (WD.party.achievements||[]).map((a,i) => `<div class="entity-item-mini"><span>${a}</span><button class="btn-sm danger" onclick="removePartyItem('achievements',${i})" style="padding:0 4px">✕</button></div>`).join('');
+  if (dec) dec.innerHTML = (WD.party.decisions||[]).map((d,i) => `<div class="entity-item-mini"><span>${d}</span><button class="btn-sm danger" onclick="removePartyItem('decisions',${i})" style="padding:0 4px">✕</button></div>`).join('');
+};
+
+function addAchievement() {
+  const val = prompt('¿Qué título o hazaña han ganado los héroes?');
+  if (val) { WD.party.achievements.push(val); saveData(); renderParty(); notify('🏆 Hazaña registrada'); }
+}
+function addDecision() {
+  const val = prompt('¿Qué decisión clave han tomado?');
+  if (val) { WD.party.decisions.push(val); saveData(); renderParty(); notify('🎭 Decisión guardada'); }
+}
+function removePartyItem(field, idx) {
+  WD.party[field].splice(idx, 1); saveData(); renderParty();
+}
+
+// INIT CALENDAR
+window.addEventListener('DOMContentLoaded', () => {
+  updateCalendarDisplay();
+  setTimeout(renderTensionChart, 500);
+});
+
+// =====================================
+// JOURNALS / CRÓNICAS - LOGIC
+// =====================================
+function renderJournals() {
+  const container = document.getElementById('journalContainer');
+  if (!container) return;
+  const journals = WD.journals || [];
+  if (journals.length === 0) {
+    container.innerHTML = '<div class="empty-state">No hay crónicas generadas aún. Al final de la sesión, usa el botón para tejer la historia.</div>';
+    return;
+  }
+
+  container.innerHTML = [...journals].reverse().map((j, idx) => {
+    const originalIdx = journals.length - 1 - idx;
+    return `
+    <div class="journal-entry" style="margin-bottom:30px">
+      <div class="journal-header" style="background:rgba(139,111,200,0.1); padding:16px 24px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border)">
+        <div style="font-family:'Cinzel',serif; font-size:16px; color:var(--accent)">${j.session || 'Sesión'}</div>
+        <div style="font-size:12px; color:var(--text-dim); font-family:'JetBrains Mono'">${j.date}</div>
+        <button class="btn-sm danger" onclick="deleteJournal(${originalIdx})">✕</button>
+      </div>
+      <div class="journal-body" style="display:grid; grid-template-columns: 1fr 1fr; background:var(--border); gap:1px">
+        <div class="journal-section" style="background:var(--surface); padding:24px; position:relative">
+          <div class="journal-section-title" style="font-family:'Cinzel',serif; font-size:13px; color:var(--accent); margin-bottom:15px">🛡️ Perspectiva del Grupo</div>
+          <button class="copy-btn-journal" onclick="copyJournalText(this, 'heroesNarrative', ${originalIdx})">📋 Copiar para Foundry</button>
+          <div class="journal-text" style="font-size:15px; line-height:1.7; color:var(--text-muted); font-family:'Crimson Pro',serif; white-space:pre-wrap; max-height:400px; overflow-y:auto">${j.heroesNarrative}</div>
+        </div>
+        <div class="journal-section" style="background:var(--surface); padding:24px; position:relative">
+          <div class="journal-section-title" style="font-family:'Cinzel',serif; font-size:13px; color:var(--accent); margin-bottom:15px">⚖️ Resumen Técnico DM</div>
+          <button class="copy-btn-journal" onclick="copyJournalText(this, 'dmSummary', ${originalIdx})">📋 Copiar para Foundry</button>
+          <div class="journal-text" style="font-size:14px; line-height:1.6; color:var(--text-dim); font-family:'Inter',sans-serif; white-space:pre-wrap; max-height:400px; overflow-y:auto">${j.dmSummary}</div>
+        </div>
+      </div>
+    </div>
+  `}).join('');
+}
+
+function copyJournalText(btn, field, idx) {
+  const text = WD.journals[idx][field];
+  copyText(btn, text);
+}
+
+async function generateCampaignJournal() {
+  const btn = event.target;
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '✨ Tejiendo la historia...';
+  btn.disabled = true;
+  notify('📖 El Cronista del Destino está escribiendo...');
+
+  const lastTimeline = (WD.timeline || []).slice(-10).map(t => t.description).join('\n');
+  const decisions = (WD.party.decisions || []).join(', ');
+  const achievements = (WD.party.achievements || []).join(', ');
+  
+  const prompt = `Actúa como el Cronista del Destino de Forgotten Realms. Basado en los hechos de la sesión:
+HECHOS: ${lastTimeline || 'Exploración por el Valle de Dessarin'}
+DECISIONES: ${decisions || 'Ninguna marcada'}
+HAZAÑAS: ${achievements || 'Héroes locales'}
+UBICACIÓN: ${WD.party.location}
+
+Genera un JSON con esta estructura:
+{
+  "heroesNarrative": "Relato épico en segunda persona plural ('Vosotros...'). Máximo 300 palabras.",
+  "dmSummary": "Resumen técnico: tramas que avanzaron, secretos revelados y notas de balance."
+}
+RESPONDE SOLO EL JSON EN ESPAÑOL.`;
+
+  try {
+    const raw = await callOpenRouter(prompt);
+    const jsonStr = raw.match(/\{[\s\S]*\}/)?.[0] || raw;
+    const data = JSON.parse(jsonStr);
+    
+    WD.journals = WD.journals || [];
+    WD.journals.push({
+      session: WD.currentSession || `Sesión ${WD.journals.length + 1}`,
+      date: new Date().toLocaleDateString('es-ES'),
+      heroesNarrative: data.heroesNarrative,
+      dmSummary: data.dmSummary
+    });
+    
+    saveData();
+    renderJournals();
+    notify('📜 Crónica integrada en los anales del mundo');
+  } catch(e) {
+    notify('❌ El Cronista ha tenido un error');
+    console.error(e);
+  } finally {
+    btn.innerHTML = originalHtml;
+    btn.disabled = false;
+  }
+}
+
+function copyText(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.textContent;
+    btn.textContent = '✅ ¡Copiado!';
+    btn.style.background = 'var(--accent2)';
+    btn.style.color = '#fff';
+    setTimeout(() => {
+      btn.textContent = original;
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 2000);
+  });
+}
+
+function deleteJournal(idx) {
+  if (confirm('¿Olvidar esta crónica de los anales?')) {
+    WD.journals.splice(idx, 1);
+    saveData(); renderJournals();
+  }
+}
 </script>
 </body>
 </html>
