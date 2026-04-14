@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🌍 Mundo Vivo — Ecos del Apocalipsis</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=JetBrains+Mono:wght@300;400&family=Inter:wght@400;500;600&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root {
   --bg: #0a0a0f;
@@ -40,6 +41,23 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
+
+/* NEWS TICKER */
+.news-ticker-wrap {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  height: 32px;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+.news-label { color: var(--accent); font-weight: 600; margin-right: 16px; flex-shrink: 0; }
+.news-track { flex: 1; overflow: hidden; white-space: nowrap; }
+.news-content { display: inline-block; animation: scroll 30s linear infinite; color: var(--text-muted); }
+@keyframes scroll { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
 
 /* Background texture */
 body::before {
@@ -1216,9 +1234,54 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
 .extool-link:hover { border-color: var(--accent); color: var(--accent); }
 .foundry-section { margin-top: 20px; }
 .foundry-export-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); white-space: pre-wrap; max-height: 200px; overflow-y: auto; margin-top: 10px; }
+.action-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.action-preview-box { 
+  margin-top: 16px; 
+  padding: 16px; 
+  background: rgba(139, 111, 200, 0.05); 
+  border: 1px dashed var(--accent); 
+  border-radius: 8px; 
+  display: none; 
+}
+.ap-title { font-family: 'Cinzel', serif; font-size: 14px; margin-bottom: 8px; color: var(--accent); }
+.ap-impact-list { font-size: 13px; color: var(--text-muted); list-style: none; padding: 0; }
+.ap-impact-list li { margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+
+.party-status-bar { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+  gap: 16px; 
+  margin-bottom: 24px; 
+}
+.party-stat-card { 
+  background: var(--surface); 
+  padding: 16px; 
+  border-radius: 12px; 
+  border: 1px solid var(--border); 
+}
+.party-grid { 
+  display: grid; 
+  grid-template-columns: 3fr 2fr; 
+  gap: 24px; 
+  height: 500px;
+}
+.party-console, .party-journal { 
+  background: var(--surface); 
+  padding: 24px; 
+  border-radius: 12px; 
+  border: 1px solid var(--border); 
+}
 </style>
 </head>
 <body>
+
+<!-- NEWS TICKER -->
+<div class="news-ticker-wrap" id="newsTicker">
+  <div class="news-label">🔔 NOTICIAS</div>
+  <div class="news-track" id="newsTrack">
+    <div class="news-content" id="newsContent">El mundo despierta... El Valle de Dessarin aguarda vuestras decisiones.</div>
+  </div>
+</div>
 
 <!-- HEADER -->
 <header class="header">
@@ -1248,6 +1311,7 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
   <button class="tab-btn" onclick="switchTab('rumores')">🗣 Rumores & IA</button>
   <button class="tab-btn" onclick="switchTab('mapa')">🌐 Mapa</button>
   <button class="tab-btn" onclick="switchTab('misiones')">🎯 Misiones</button>
+  <button class="tab-btn" onclick="switchTab('grupo')">🛡️ El Grupo</button>
   <button class="tab-btn" onclick="switchTab('herramientas')">🔧 Herramientas</button>
 </nav>
 
@@ -1266,6 +1330,7 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
     <button class="btn primary" onclick="openModal('addRegion')">＋ Nueva Región</button>
     <button class="btn" onclick="tickWorld()">⟳ Tick del Mundo</button>
     <button class="btn purple" onclick="generateRumors()">🗣 Generar Rumores</button>
+    <button class="btn purple" onclick="balanceWorldWithAI()">⚖️ Balancear Mundo con IA</button>
     <button class="btn" onclick="exportData()">↓ Exportar</button>
     <button class="btn" onclick="importData()">↑ Importar</button>
     <input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
@@ -1291,6 +1356,7 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
   <div class="toolbar">
     <button class="btn primary" onclick="openModal('addNPC')">＋ Nuevo NPC</button>
     <button class="btn purple" onclick="generateNPCNarrative()">🗣 IA: Analizar NPCs</button>
+    <button class="btn purple" onclick="openModal('aiGeneration', 'NPC')">🪄 IA: Generar NPC</button>
   </div>
   <div class="filter-bar">
     <input class="filter-input" type="text" placeholder="Buscar NPC..." oninput="filterNPCs(this.value)">
@@ -1335,6 +1401,7 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
   <div class="toolbar">
     <button class="btn primary" onclick="openModal('addEvent')">＋ Registrar Evento</button>
     <button class="btn purple" onclick="generateEventConsequences()">⚡ IA: Consecuencias</button>
+    <button class="btn purple" onclick="openModal('aiGeneration', 'Evento')">🪄 IA: Crear Evento</button>
   </div>
   <div id="consequenceLog" class="consequence-log" style="margin-bottom:20px;display:none"></div>
   <div id="eventsList"></div>
@@ -1344,6 +1411,7 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
 <div class="tab-content" id="tab-artefactos">
   <div class="toolbar">
     <button class="btn primary" onclick="openModal('addItem')">＋ Nuevo Artefacto</button>
+    <button class="btn purple" onclick="openModal('aiGeneration', 'Artefacto')">🪄 IA: Crear Artefacto</button>
   </div>
   <div class="items-grid" id="itemsGrid"></div>
 </div>
@@ -1357,6 +1425,7 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
     </div>
     <button class="btn primary" onclick="openModal('addTimeline')">＋ Añadir Entrada</button>
     <button class="btn purple" onclick="generateSessionSummary()">🗣 IA: Resumen Narrativo</button>
+    <button class="btn purple" onclick="openModal('aiGeneration', 'Historia')">🪄 IA: Entrada Narrativa</button>
   </div>
   <div class="timeline" id="timelineContainer"></div>
 </div>
@@ -1371,6 +1440,12 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
   <div class="rumor-panel">
     <div class="rumor-title">🗣 Rumores Activos</div>
     <div class="rumor-output" id="rumorOutput">Los rumores aparecerán aquí...</div>
+  </div>
+  <div class="rumor-panel">
+    <div class="rumor-title">📊 Pulso de la Campaña (Tensión Global)</div>
+    <div class="rumor-output" style="padding:10px; height:300px">
+      <canvas id="tensionChart"></canvas>
+    </div>
   </div>
   <div class="rumor-panel">
     <div class="rumor-title">🔮 Análisis Narrativo</div>
@@ -1402,11 +1477,38 @@ body.player-view .pvtoggle-btn { background: rgba(139,111,200,0.12); border-colo
   </div>
 </div>
 
+<!-- ===== EL GRUPO ===== -->
+<div class="tab-content" id="tab-grupo">
+  <div class="party-status-bar" id="partyStatusBar"></div>
+
+  <div class="party-grid">
+    <div class="party-console">
+      <div class="section-header">🛡️ Acción del Grupo</div>
+      <div class="form-group">
+        <label class="form-label">¿Qué han hecho los jugadores?</label>
+        <textarea class="form-textarea" id="partyActionInput" placeholder="Ej: Derrotaron al Rey de los Osos en el bosque..."></textarea>
+      </div>
+      <div class="action-btn-row">
+        <button class="btn purple" onclick="analyzePartyAction()">🪄 IA: Analizar Impacto</button>
+        <button class="btn primary" onclick="submitPartyActionManual()">📜 Registrar Manual</button>
+      </div>
+      <div id="partyActionProgress" style="display:none; color:var(--accent); font-style:italic; margin-top:10px">Calculando las ondas de choque en el mundo...</div>
+      <div id="partyActionPreview" class="action-preview-box"></div>
+    </div>
+
+    <div class="party-journal">
+      <div class="section-header">📓 Notas del DM sobre el Grupo</div>
+      <textarea class="form-textarea" style="height: calc(100% - 40px)" id="partyNotes" onchange="updatePartyStat('notes', this.value)"></textarea>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MISIONES ===== -->
 <div class="tab-content" id="tab-misiones">
   <div class="toolbar">
     <button class="btn primary" onclick="openModal('addMission')">＋ Nueva Misión</button>
     <button class="btn purple" onclick="generateMissionNarrative()">🗣 IA: Estado de Misiones</button>
+    <button class="btn purple" onclick="openModal('aiGeneration', 'Misión')">🪄 IA: Crear Misión</button>
     <button class="btn" onclick="filterMissions('active')" id="mfActive">⚡ Activas</button>
     <button class="btn" onclick="filterMissions('all')" id="mfAll">📋 Todas</button>
   </div>
@@ -1575,12 +1677,20 @@ function loadData() {
       if (!WD.factions) WD.factions = DEFAULT_DATA.factions;
       if (!WD.timeline) WD.timeline = [];
       if (!WD.missions) WD.missions = DEFAULT_DATA.missions.map(m => ({...m}));
+      if (!WD.party) WD.party = { location: 'Red Larch', names: 'Los Héroes', notes: '', stats: { level: 1, gold: 0 } };
+      if (!WD.statsHistory) WD.statsHistory = [];
       // Migrate new region fields
       for (const r of Object.values(WD.regions || {})) {
         if (!r.notes) r.notes = '';
         if (!r.statHistory) r.statHistory = [];
         if (!r.relations) r.relations = [];
       }
+      for (const f of (WD.factions || [])) {
+        if (f.reputation === undefined) f.reputation = 0;
+      }
+      // FORCE RESET AI MODEL TO FREE ROUTER
+      WD.aiModel = 'openrouter/free';
+      saveData();
     } else {
       WD = JSON.parse(JSON.stringify(DEFAULT_DATA));
       for (const r of Object.values(WD.regions)) {
@@ -1630,24 +1740,25 @@ async function testApiKey() {
       headers: {
         'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://mundovivo.app',
+        'HTTP-Referer': 'https://github.com/OpenRouter', // More reliable referer
         'X-Title': 'Mundo Vivo'
       },
       body: JSON.stringify({
-        model: 'mistralai/mistral-7b-instruct:free',
+        model: 'openrouter/free',
         messages: [{ role: 'user', content: 'Di solo: OK' }],
         max_tokens: 5
       })
     });
     if (resp.ok) {
       status.className = 'api-status ok';
-      status.title = '✓ API key válida';
-      notify('✓ API key válida y funcionando');
+      status.title = '✓ API key válida (openrouter/free)';
+      notify('✓ API key válida — Usando openrouter/free');
     } else {
       const err = await resp.json().catch(() => ({}));
       status.className = 'api-status error';
-      status.title = `Error ${resp.status}: ${err?.error?.message || 'Clave inválida o sin créditos'}`;
-      notify(`❌ API key inválida (${resp.status})`);
+      const msg = err?.error?.message || `Error ${resp.status}`;
+      status.title = msg;
+      notify(`❌ ${msg}`);
     }
   } catch(e) {
     status.className = 'api-status error';
@@ -1687,6 +1798,7 @@ function renderTab(name) {
   if (name === 'timeline') renderTimeline();
   if (name === 'mapa') renderMap();
   if (name === 'misiones') renderMissions();
+  if (name === 'grupo') renderParty();
   if (name === 'herramientas') {} // static HTML
 }
 
@@ -2156,31 +2268,50 @@ function openEditNPC(id) {
 function renderFactions() {
   const grid = document.getElementById('factionsGrid');
   if (!grid) return;
-  const html = (WD.factions || []).map(f => `
+  const html = (WD.factions || []).map(f => {
+    const rep = f.reputation || 0;
+    const repColor = rep > 40 ? '#3ae87a' : (rep < -40 ? '#e85c3a' : '#c8a96e');
+    const repLabel = rep > 70 ? 'Salvadores' : (rep > 20 ? 'Aliados' : (rep < -70 ? 'Archienemigos' : (rep < -20 ? 'Hostiles' : 'Neutrales')));
+    
+    return `
     <div class="region-card" style="--accent-color:${f.color}">
       <div class="region-header">
         <div>
           <div class="region-name">${f.icon} ${f.name}</div>
           <div class="region-zone">${f.territory}</div>
         </div>
-        <span class="region-status status-${f.status==='activa'?'warning':'stable'}">${f.status.toUpperCase()}</span>
+        <span class="region-status" style="border-color:${repColor}; color:${repColor}">${repLabel.toUpperCase()}</span>
       </div>
       <div class="stat-row" style="margin-bottom:8px">
         <span class="stat-label">PODER</span>
         <div class="stat-bar-wrap" onclick="editFactionPower(${f.id})">
           <div class="power-bar" style="width:${f.power}%;background:${f.color}"></div>
         </div>
-        <span class="stat-val" onclick="editFactionPower(${f.id})">${f.power}</span>
+        <span class="stat-val">${f.power}</span>
       </div>
-      <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;font-style:italic">${f.goals}</div>
+      <div class="stat-row">
+        <span class="stat-label">REPUTACIÓN</span>
+        <div class="stat-bar-wrap" title="Afinidad con el grupo: ${rep}" onclick="editFactionRep(${f.id})">
+          <div class="stat-bar" style="width:${(rep + 100) / 2}%;background:${repColor}"></div>
+        </div>
+        <span class="stat-val" style="color:${repColor}">${rep}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text-muted);margin:12px 0 8px;font-style:italic">${f.goals}</div>
       <div style="font-size:12px;color:var(--text-dim);font-family:'JetBrains Mono',monospace">👥 ${f.members} miembros</div>
       <div class="region-actions" style="margin-top:12px">
         <button class="btn-sm" onclick="editFactionField(${f.id})">✎ Editar</button>
         <button class="btn-sm danger" onclick="deleteFaction(${f.id})">✕</button>
       </div>
     </div>
-  `).join('');
+  `}).join('');
   grid.innerHTML = html || '<div class="empty-state">Sin facciones registradas</div>';
+}
+
+function editFactionRep(id) {
+  const f = WD.factions.find(x => x.id === id);
+  if (!f) return;
+  const val = prompt(`Cambiar Reputación con ${f.name} (-100 a 100):`, f.reputation || 0);
+  if (val !== null && !isNaN(val)) { f.reputation = Math.max(-100, Math.min(100, Number(val))); saveData(); renderFactions(); }
 }
 
 function editFactionPower(id) {
@@ -2821,7 +2952,7 @@ function closeModalIfOutside(e) {
 // ============================================================
 // AI — OPENROUTER
 // ============================================================
-async function callOpenRouter(prompt, onChunk) {
+async function callOpenRouter(prompt) {
   const key = WD.apiKey;
   if (!key) {
     notify('⚠ Configura tu API key de OpenRouter primero');
@@ -2834,26 +2965,30 @@ async function callOpenRouter(prompt, onChunk) {
       headers: {
         'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://mundovivo.app',
-        'X-Title': 'Mundo Vivo — Ecos del Apocalipsis'
+        'HTTP-Referer': 'https://github.com/OpenRouter',
+        'X-Title': 'Mundo Vivo - Ecos del Apocalipsis'
       },
       body: JSON.stringify({
-        model: 'mistralai/mistral-7b-instruct:free',
-        messages: [{ role: 'user', content: prompt }],
-        stream: false,
-        max_tokens: 800
+        model: 'openrouter/free',
+        messages: [
+          { role: 'system', content: 'Eres un avanzado asistente de Dungeon Master para D&D 5e. RESPONDE SIEMPRE EXCLUSIVAMENTE EN ESPAÑOL. Tono épico, preciso y coherente con el lore de Forgotten Realms.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
       })
     });
 
     if (!resp.ok) {
-      const err = await resp.text();
-      notify(`❌ Error API: ${resp.status}`);
-      console.error(err);
+      const errJson = await resp.json().catch(() => ({}));
+      const errMsg = errJson?.error?.message || `HTTP ${resp.status}`;
+      console.error('[OpenRouter]', resp.status, errMsg);
+      notify(`❌ Error API (${resp.status}): ${errMsg}`);
       return null;
     }
 
     const data = await resp.json();
-    return data.choices?.[0]?.message?.content || null;
+    return data.choices?.[0]?.message?.content?.trim() || null;
   } catch(e) {
     notify(`❌ Error de conexión: ${e.message}`);
     return null;
@@ -2887,10 +3022,13 @@ async function generateRumors() {
   notify('🗣 Generando rumores...');
   switchTab('rumores');
 
-  const prompt = `Eres un narrador de D&D 5e. Basándote en el estado actual del mundo, genera 5 rumores breves que los jugadores podrían escuchar en una taberna. Deben sonar como habla de gente común, ser específicos y tener peso narrativo real. En español.
+  const prompt = `Genera 5 rumores breves para una taberna basados en el estado actual del mundo. 
+Los rumores deben sonar como habla de gente común, ser específicos y tener peso narrativo real.
 
+ESTADO DEL MUNDO:
 ${worldSummaryForAI()}
 
+IMPORTANTE: RESPONDE EXCLUSIVAMENTE EN ESPAÑOL. 
 Formato: cada rumor en una línea, comenzando con 🗣️`;
 
   const result = await callOpenRouter(prompt);
@@ -2905,15 +3043,16 @@ async function generateWorldAnalysis() {
   if (output) { output.textContent = 'Analizando el tejido del universo...'; output.className = 'rumor-output loading'; }
   notify('🔮 Analizando el universo...');
 
-  const prompt = `Eres el Dungeon Master de "Ecos del Apocalipsis". Analiza el estado actual del mundo y proporciona:
-1. Las 3 tensiones narrativas más urgentes
-2. Qué facción lleva la delantera ahora mismo
-3. Qué región está a punto de colapsar
-4. Una predicción narrativa dramática para la próxima sesión
+  const prompt = `Analiza el estado actual del mundo para el DM y proporciona:
+1. Las 3 tensiones narrativas más urgentes.
+2. Qué facción lleva la delantera.
+3. Qué región está a punto de colapsar.
+4. Una predicción dramática.
 
+ESTADO DEL MUNDO:
 ${worldSummaryForAI()}
 
-Responde en español, con tono épico y literario. Máximo 300 palabras.`;
+RESPONDE EXCLUSIVAMENTE EN ESPAÑOL. Tono épico-literario. Máximo 300 palabras.`;
 
   const result = await callOpenRouter(prompt);
   if (output) {
@@ -3043,6 +3182,135 @@ Escribe en español, segunda persona plural ("los héroes"), tono épico-literar
 }
 
 // ============================================================
+// AI — GENERACIÓN DE CONTENIDO (NPC, MISIONES, ETC)
+// ============================================================
+async function submitAIGeneration(type) {
+  const userPrompt = document.getElementById('mAiPrompt').value.trim();
+  const btn = document.getElementById('btnRunAi');
+  const progress = document.getElementById('aiProgress');
+
+  btn.disabled = true;
+  progress.style.display = 'block';
+
+  let schema = "";
+  if (type === 'NPC') schema = '{"name":"", "race":"", "role":"", "location":"Valle de Dessarin", "faction":"", "relation":"neutral", "status":"activo", "notes":""}';
+  if (type === 'Misión') schema = '{"name":"", "description":"", "priority":"secondary", "status":"active", "regions":[], "npcs":[], "reward":"", "notes":""}';
+  if (type === 'Artefacto') schema = '{"name":"", "type":"", "rarity":"rare", "location":"", "holder":"", "element":"none", "notes":""}';
+  if (type === 'Evento') schema = '{"name":"", "description":"", "regions":[], "impact":"minor"}';
+  if (type === 'Historia') schema = '{"description":"", "regions":[], "npcs":[]}';
+
+  const systemMessage = `Eres un DM experto. Devuelve ÚNICAMENTE un objeto JSON válido que siga este esquema: ${schema}. El contenido debe estar en ESPAÑOL y ser coherente con la campaña del Valle de Dessarin.`;
+  const userMessage = `Genera un ${type} coherente con este estado del mundo:
+${worldSummaryForAI()}
+${userPrompt ? `Idea del DM: ${userPrompt}` : 'Generación aleatoria dramática.'}
+RECUERDA: Solo JSON.`;
+
+  try {
+    const rawResult = await callOpenRouter(userMessage);
+    if (!rawResult) throw new Error("La IA no respondió");
+
+    // Intentar extraer JSON si viene envuelto en markdown
+    const jsonStr = rawResult.match(/\{[\s\S]*\}/)?.[0] || rawResult;
+    const data = JSON.parse(jsonStr);
+
+    if (type === 'NPC') {
+      const npc = { id: WD.nextId++, ...data };
+      WD.npcs.push(npc);
+      renderNPCs();
+      notify(`👤 NPC generado: ${npc.name}`);
+    } else if (type === 'Misión') {
+      const mission = { id: WD.nextId++, ...data };
+      WD.missions.push(mission);
+      renderMissions();
+      notify(`🎯 Misión generada: ${mission.name}`);
+    } else if (type === 'Artefacto') {
+      const item = { id: WD.nextId++, ...data };
+      WD.items.push(item);
+      renderItems();
+      notify(`💎 Artefacto generado: ${item.name}`);
+    } else if (type === 'Evento') {
+      const ev = { id: Date.now(), ...data, session: WD.currentSession || 'IA' };
+      WD.events = WD.events || [];
+      WD.events.push(ev);
+      // Aplicar impacto si existe
+      if (ev.impact !== 'none' && ev.regions && ev.regions.length > 0) {
+        ev.regions.forEach(rName => {
+          const r = WD.regions[rName];
+          if (r) {
+            const mod = ev.impact === 'minor' ? 5 : (ev.impact === 'major' ? 15 : 25);
+            r.chaos = Math.min(100, r.chaos + mod);
+            r.crime = Math.min(100, r.crime + mod);
+            r.fear = Math.min(100, r.fear + (mod*0.8));
+          }
+        });
+      }
+      renderEvents(); renderRegions();
+      notify(`⚡ Evento generado: ${ev.name}`);
+    } else if (type === 'Historia') {
+      const entry = { id: WD.nextId++, ...data, session: WD.currentSession || 'IA' };
+      WD.timeline = WD.timeline || [];
+      WD.timeline.push(entry);
+      renderTimeline();
+      notify(`📜 Historia actualizada`);
+    }
+
+    saveData();
+    closeModal();
+  } catch(e) {
+    console.error(e);
+    notify(`❌ Error en generación: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    progress.style.display = 'none';
+  }
+}
+
+// ============================================================
+// AI — BALANCEO DE MUNDO
+// ============================================================
+async function balanceWorldWithAI() {
+  const confirmBalance = confirm("¿Quieres que la IA analice la narrativa actual y proponga cambios en los stats (Caos, Crimen, etc.) de las regiones para balancear el juego?");
+  if (!confirmBalance) return;
+
+  notify('⚖️ Analizando equilibrio del mundo...');
+
+  const schema = '{"region_name": {"chaos": 0, "crime": 0, "fear": 0, "wealth": 0}}';
+  const prompt = `Analiza la situación actual de mi campaña y sugiere ajustes de STATS (+/- 10%) para las regiones que tengan sentido narrativo según los últimos eventos y misiones.
+ESTADO: ${worldSummaryForAI()}
+Devuelve un JSON con este formato (solo las regiones que cambian): ${schema}.
+RECUERDA: Solo JSON, en español.`;
+
+  try {
+    const rawResult = await callOpenRouter(prompt);
+    const jsonStr = rawResult.match(/\{[\s\S]*\}/)?.[0] || rawResult;
+    const suggestions = JSON.parse(jsonStr);
+
+    let changedCount = 0;
+    for (const [rName, mods] of Object.entries(suggestions)) {
+      if (WD.regions[rName]) {
+        const r = WD.regions[rName];
+        if (mods.chaos !== undefined) r.chaos = Math.max(0, Math.min(100, r.chaos + mods.chaos));
+        if (mods.crime !== undefined) r.crime = Math.max(0, Math.min(100, r.crime + mods.crime));
+        if (mods.fear !== undefined) r.fear = Math.max(0, Math.min(100, r.fear + mods.fear));
+        if (mods.wealth !== undefined) r.wealth = Math.max(0, Math.min(100, r.wealth + mods.wealth));
+        changedCount++;
+      }
+    }
+
+    if (changedCount > 0) {
+      saveData();
+      renderRegions();
+      notify(`✅ Mundo balanceado: ${changedCount} regiones ajustadas.`);
+    } else {
+      notify('ℹ️ La IA considera que el mundo está equilibrado ahora mismo.');
+    }
+  } catch(e) {
+    console.error(e);
+    notify('❌ No se pudieron procesar las sugerencias de la IA.');
+  }
+}
+
+// ============================================================
 // AI — GENERADOR DE EVENTOS POR REGIÓN
 // ============================================================
 async function generateRegionEvent(regionName) {
@@ -3152,6 +3420,10 @@ function renderMap() {
     const rOuter = rInner + 4;
     const crisisCls = status === 'crisis' ? 'loc-crisis-anim' : status === 'warning' ? 'loc-warning-anim' : '';
     const dotColor = status !== 'stable' ? glowColor : baseColor;
+    
+    // Check if party is here
+    const isPartyHere = WD.party && WD.party.location === loc.region;
+
     const nameLines = loc.name.split(' ');
     const midIdx = Math.ceil(nameLines.length / 2);
     const line1 = nameLines.slice(0, midIdx).join(' ');
@@ -3560,6 +3832,139 @@ function notify(msg) {
 }
 
 // ============================================================
+// EVENTS — RENDER
+// ============================================================
+function renderEvents() {
+  const container = document.getElementById('eventsList');
+  if (!container) return;
+  const events = WD.events || [];
+  if (events.length === 0) {
+    container.innerHTML = '<div class="empty-state">No hay eventos globales registrados.</div>';
+    return;
+  }
+
+  container.innerHTML = [...events].reverse().map(e => `
+    <div class="mission-card" style="border-left: 3px solid var(--accent)">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start">
+        <div class="mc-name" style="font-size:16px">${e.name}</div>
+        <span class="mc-tag mct-active">${e.session || 'S?'}</span>
+      </div>
+      <div class="mc-desc" style="margin:8px 0">${e.description || 'Sin descripción.'}</div>
+      <div class="mc-tags">
+        <span class="mc-tag mct-side">📍 ${(e.regions||[]).join(' · ') || 'Global'}</span>
+        <span class="mc-tag" style="background:rgba(139,111,200,0.1); color:var(--accent2)">⚡ Impacto: ${e.impact || 'minor'}</span>
+      </div>
+      <div style="margin-top:10px; text-align:right">
+        <button class="btn-sm danger" onclick="deleteEvent(${e.id})">Eliminar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteEvent(id) {
+  if (!confirm('¿Eliminar este evento?')) return;
+  WD.events = (WD.events || []).filter(e => e.id !== id);
+  saveData(); renderEvents(); notify('⚡ Evento eliminado');
+}
+
+// ============================================================
+// ITEMS — RENDER
+// ============================================================
+function renderItems() {
+  const grid = document.getElementById('itemsGrid');
+  if (!grid) return;
+  const items = WD.items || [];
+  if (items.length === 0) {
+    grid.innerHTML = '<div class="empty-state">No hay artefactos en el compendio.</div>';
+    return;
+  }
+
+  const rarityColor = {
+    'common': '#a0a0a0',
+    'uncommon': '#3ae87a',
+    'rare': '#3a87e8',
+    'very-rare': '#a33ae8',
+    'legendary': '#e8a33a'
+  };
+
+  grid.innerHTML = items.map(i => `
+    <div class="region-card" style="border-top: 2px solid ${rarityColor[i.rarity]}">
+      <div class="region-header">
+        <div>
+          <div class="region-name">💎 ${i.name}</div>
+          <div class="region-zone">${i.type}</div>
+        </div>
+        <span class="region-status" style="background:rgba(255,255,255,0.05); color:${rarityColor[i.rarity]}; border-color:${rarityColor[i.rarity]}80">
+          ${i.rarity.toUpperCase()}
+        </span>
+      </div>
+      <div style="font-size:13px; margin:8px 0; color:var(--text); line-height:1.4">${i.description || 'Sin detalles.'}</div>
+      <div class="mc-tags" style="margin-top:8px">
+        ${i.location ? `<span class="mc-tag mct-side">📍 ${i.location}</span>` : ''}
+        ${i.holder ? `<span class="mc-tag mct-main">👤 ${i.holder}</span>` : ''}
+        ${i.element !== 'none' ? `<span class="mc-tag mct-active">${i.element.toUpperCase()}</span>` : ''}
+      </div>
+      <div class="region-actions" style="margin-top:12px">
+        <button class="btn-sm" onclick="openModal('editItem', ${i.id})">✎</button>
+        <button class="btn-sm danger" onclick="deleteItem(${i.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteItem(id) {
+  if (!confirm('¿Eliminar este artefacto?')) return;
+  WD.items = (WD.items || []).filter(i => i.id !== id);
+  saveData(); renderItems(); notify('💎 Artefacto eliminado');
+}
+
+function submitEditItem(id) {
+  const item = (WD.items||[]).find(i => i.id === id);
+  if (!item) return;
+  item.name = document.getElementById('eItemName').value.trim();
+  item.location = document.getElementById('eItemLoc').value.trim();
+  item.holder = document.getElementById('eItemHolder').value.trim();
+  item.description = document.getElementById('eItemDesc').value.trim();
+  saveData(); closeModal(); renderItems(); notify(`✎ Artefacto actualizado`);
+}
+
+// ============================================================
+// TIMELINE — RENDER
+// ============================================================
+function renderTimeline() {
+  const container = document.getElementById('timelineContainer');
+  if (!container) return;
+  const entries = WD.timeline || [];
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="empty-state">La cronología está vacía. ¡Registra los pasos de tus héroes!</div>';
+    return;
+  }
+
+  container.innerHTML = [...entries].reverse().map(t => `
+    <div class="timeline-item">
+      <div class="tl-bullet"></div>
+      <div class="tl-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+          <div style="font-family:'Cinzel',serif; font-size:14px; color:var(--accent)">${t.session}</div>
+          <button class="btn-sm danger" onclick="deleteTimelineEntry(${t.id})" style="padding:2px 6px">✕</button>
+        </div>
+        <div style="font-size:14px; line-height:1.5; color:var(--text-muted)">${t.description}</div>
+        <div class="mc-tags" style="margin-top:8px">
+          ${(t.regions||[]).map(r => `<span class="mc-tag mct-side">📍 ${r}</span>`).join('')}
+          ${(t.npcs||[]).map(n => `<span class="mc-tag mct-main">👤 ${n}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteTimelineEntry(id) {
+  if (!confirm('¿Eliminar esta entrada de historia?')) return;
+  WD.timeline = (WD.timeline || []).filter(t => t.id !== id);
+  saveData(); renderTimeline(); notify('📜 Entrada eliminada');
+}
+
+// ============================================================
 // INIT
 // ============================================================
 window.addEventListener('DOMContentLoaded', () => {
@@ -3581,6 +3986,79 @@ window.addEventListener('DOMContentLoaded', () => {
 // 8. 📋 Plantillas de regiones (aldea, dungeon, fortaleza) para creación rápida
 // 9. 🌍 Integración con D&D Beyond / compendios de monstruos
 // 10. 🎙 Voz en off narrativa (Web Speech API) para leer resúmenes
+function submitPartyActionManual() {
+  const input = document.getElementById('partyActionInput').value.trim();
+  if (!input) return;
+  
+  WD.timeline = WD.timeline || [];
+  WD.timeline.push({
+    id: WD.nextId++,
+    session: WD.currentSession,
+    description: "ACCIÓN MANUAL: " + input,
+    regions: [WD.party.location]
+  });
+  
+  notify('📜 Acción registrada manualmente');
+  document.getElementById('partyActionInput').value = '';
+  saveData(); renderTimeline();
+}
+
+let tensionChart = null;
+function renderTensionChart() {
+  const canvas = document.getElementById('tensionChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const currentChaos = Object.values(WD.regions).reduce((acc, r) => acc + r.chaos, 0) / Object.keys(WD.regions).length;
+  const session = WD.currentSession || "Inic";
+
+  const lastEntry = (WD.statsHistory || []).slice(-1)[0];
+  if (!lastEntry || lastEntry.session !== session) {
+    WD.statsHistory = WD.statsHistory || [];
+    WD.statsHistory.push({ session, chaos: currentChaos });
+    if (WD.statsHistory.length > 20) WD.statsHistory.shift();
+    saveData();
+  }
+
+  const labels = WD.statsHistory.map(h => h.session);
+  const data = WD.statsHistory.map(h => h.chaos);
+
+  if (tensionChart) tensionChart.destroy();
+  tensionChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Tensión Global',
+        data: data,
+        borderColor: '#8b6fc8',
+        backgroundColor: 'rgba(139,111,200,0.1)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: 4,
+        pointBackgroundColor: '#8b6fc8'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } },
+        x: { grid: { display: false }, ticks: { color: '#888' } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+// Override generateWorldAnalysis to also update charts
+const originalWorldAnalysis = generateWorldAnalysis;
+generateWorldAnalysis = async function() {
+  await originalWorldAnalysis();
+  renderTensionChart();
+};
+
 </script>
 </body>
 </html>
